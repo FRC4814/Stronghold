@@ -10,11 +10,12 @@ public class ShiftUp extends Command{
 	public ShiftUp() {
 		System.out.println("ShiftUp1");
 		requires(Robot.pneumatics);
+		//execute();
 	}
 	
 	@Override
 	protected void initialize() {
-		System.out.println("ShiftUp1");
+		System.out.println("ShiftUp2");
 		
 	}
 

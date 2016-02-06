@@ -10,10 +10,10 @@ public class Pneumatics extends Subsystem{
 	 DoubleSolenoid shifter3;
 	 
 	public Pneumatics() {
-        leftShifter = new DoubleSolenoid(2, 3);
-        rightShifter = new DoubleSolenoid(0, 1);
-        shifter2 = new DoubleSolenoid(4, 5);
-        shifter3 = new DoubleSolenoid(6, 7);
+        //leftShifter = new DoubleSolenoid(2, 3);
+       // rightShifter = new DoubleSolenoid(0, 1);
+       // shifter2 = new DoubleSolenoid(4, 5);
+      //  shifter3 = new DoubleSolenoid(6, 7);
 	}
 
 	@Override
