@@ -2,12 +2,15 @@ package org.usfirst.frc.team4814.robot;
 
 
 import edu.wpi.first.wpilibj.SampleRobot;
+import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.RobotDrive;
 
 import org.usfirst.frc.team4814.robot.commands.ShiftUp;
 import org.usfirst.frc.team4814.robot.subsystems.Pneumatics;
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Victor;
@@ -16,6 +19,8 @@ import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.command.Subsystem;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 /**
  * This is a demo program showing the use of the RobotDrive class, specifically it 
  * contains the code necessary to operate a robot with tank drive.
@@ -34,21 +39,26 @@ public class Robot extends SampleRobot {
     RobotDrive myRobot;// class that handles basic drive operations
     Joystick joystick;
     public static final Pneumatics pneumatics = new Pneumatics();
-    public static OI oi;
-    DoubleSolenoid leftShifter;
-	 DoubleSolenoid rightShifter;
-	 DoubleSolenoid shifter2;
-	 DoubleSolenoid shifter3;
+	DoubleSolenoid shifter2;
+	DoubleSolenoid shifter3;
+	Talon intakeMotor;
+	 //Encoder enc;
+	 DigitalInput D;
 	 
     public Robot() {
     	MultiSpeedController leftDrive = new MultiSpeedController(new Victor(1), new Victor(2), new Victor(3));
     	MultiSpeedController rightDrive = new MultiSpeedController(new Victor(4), new Victor(5), new Victor(0));
+   	 	//enc = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
+   	 	D = new DigitalInput(0);
+   	 	//enc.setMaxPeriod(.1);
+   	 	//enc.setMinRate(10);
+   	 	//enc.setDistancePerPulse(5);
+ 		//enc.setReverseDirection(true);
+ 		//enc.setSamplesToAverage(7);
+    	intakeMotor = new Talon(6);
         myRobot = new RobotDrive(leftDrive, rightDrive);
         myRobot.setExpiration(0.1);
         joystick = new Joystick(1);
-        //oi = new OI();
-        leftShifter = new DoubleSolenoid(2, 3);
-        rightShifter = new DoubleSolenoid(0, 1);
         shifter2 = new DoubleSolenoid(4, 5);
         shifter3 = new DoubleSolenoid(6, 7);    
     }
@@ -60,28 +70,59 @@ public class Robot extends SampleRobot {
     public void operatorControl() {
         myRobot.setSafetyEnabled(true);
         
-        
         while (isOperatorControl() && isEnabled()) {
-        	if (joystick.getRawButton(1)) {
-        		leftShifter.set(DoubleSolenoid.Value.kReverse);
-        		rightShifter.set(DoubleSolenoid.Value.kReverse);
+        	if (joystick.getRawButton(5)) {
         		shifter2.set(DoubleSolenoid.Value.kReverse);
         		shifter3.set(DoubleSolenoid.Value.kReverse);
-        		System.out.println("test");
         	}
-        	if (joystick.getRawButton(3)) {
-        		leftShifter.set(DoubleSolenoid.Value.kForward);
-        		rightShifter.set(DoubleSolenoid.Value.kForward);
+        	if (joystick.getRawButton(6)) {
         		shifter2.set(DoubleSolenoid.Value.kForward);
         		shifter3.set(DoubleSolenoid.Value.kForward);
-        		System.out.println("test");
         	}
-        	double x, y;
-        	x = joystick.getRawAxis(2);
-        	y = joystick.getRawAxis(1);
-        	myRobot.setLeftRightMotorOutputs(y-x, y+x);
+        	
+        	runIntake();
+        	
+        	double x, y;        	
+        	x = Math.pow(joystick.getRawAxis(2), 3);
+        	y = Math.pow(joystick.getRawAxis(1), 3);
+        	
+        	/*
+        	if (joystick.getRawButton(8)) {
+        		myRobot.setLeftRightMotorOutputs(-y/5-x/3,-y/5+x/3);
+        	}
+        	else {*/
+        		myRobot.setLeftRightMotorOutputs(-y-x,-y+x);
+        	//}
+        	System.out.println(System.currentTimeMillis() + "\t" + D.get());
+        	
+        	SendableChooser position = new SendableChooser();
+        	position.addDefault("Position 1", new Auto());
+        	position.addObject("Position 2", new Auto());
+        	position.addObject("Position 3", new Auto());
+        	position.addObject("Position 4", new Auto());
+        	position.addObject("Position 5", new Auto());
+            SmartDashboard.putData("Position", position);
+            
+            SendableChooser obstacle = new SendableChooser();
+            obstacle.addDefault("Cheval", new Auto());
+            obstacle.addObject("Rock Wall", new Auto());
+            obstacle.addObject("Ramparts", new Auto());
+            SmartDashboard.putData("Obstacle", obstacle);
+            
             Timer.delay(0.005);	// wait for a motor update time
         }
+    }
+    
+    public void runIntake() {
+    	if (joystick.getRawButton(7)) {
+    		intakeMotor.set(1);
+    	}
+    	else if (joystick.getRawButton(8)) {
+			intakeMotor.set(-1);
+    	}
+    	else {
+    		intakeMotor.set(0);
+    	}
     }
     
 
