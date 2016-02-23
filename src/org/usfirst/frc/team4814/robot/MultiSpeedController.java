@@ -42,13 +42,11 @@ public class MultiSpeedController implements SpeedController {
         }
     }
 
-	@Override
 	public void setInverted(boolean isInverted) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	@Override
 	public boolean getInverted() {
 		// TODO Auto-generated method stub
 		return false;
