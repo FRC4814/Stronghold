@@ -1,28 +1,26 @@
 package org.usfirst.frc.team4814.robot;
 
 
-import edu.wpi.first.wpilibj.SampleRobot;
-import edu.wpi.first.wpilibj.Talon;
-import edu.wpi.first.wpilibj.RobotDrive;
-
-import org.usfirst.frc.team4814.robot.commands.ShiftUp;
+import org.usfirst.frc.team4814.robot.autoCommands.MoveForward;
+import org.usfirst.frc.team4814.robot.commands.IntakeDown;
+import org.usfirst.frc.team4814.robot.commands.IntakeIn;
+import org.usfirst.frc.team4814.robot.commands.IntakeOut;
+import org.usfirst.frc.team4814.robot.commands.IntakeUp;
+import org.usfirst.frc.team4814.robot.commands.UpdateDashboard;
+import org.usfirst.frc.team4814.robot.dashboard.Dashboard;
+import org.usfirst.frc.team4814.robot.subsystems.DriveBase;
+import org.usfirst.frc.team4814.robot.subsystems.GhettoEncoder;
+import org.usfirst.frc.team4814.robot.subsystems.Intake;
 import org.usfirst.frc.team4814.robot.subsystems.Pneumatics;
 
-import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.Victor;
-import edu.wpi.first.wpilibj.buttons.Button;
-import edu.wpi.first.wpilibj.buttons.JoystickButton;
+import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.command.Subsystem;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.command.Scheduler;
+import edu.wpi.first.wpilibj.livewindow.LiveWindow;
+
 /**
  * This is a demo program showing the use of the RobotDrive class, specifically it 
+
  * contains the code necessary to operate a robot with tank drive.
  *
  * The VM is configured to automatically run this class, and to call the
@@ -35,95 +33,93 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * don't. Unless you know what you are doing, complex code will be much more difficult under
  * this system. Use IterativeRobot or Command-Based instead if you're new.
  */
-public class Robot extends SampleRobot {
-    RobotDrive myRobot;// class that handles basic drive operations
-    Joystick joystick;
-    public static final Pneumatics pneumatics = new Pneumatics();
-	DoubleSolenoid shifter2;
-	DoubleSolenoid shifter3;
-	Talon intakeMotor;
-	 //Encoder enc;
-	 DigitalInput D;
-	 
-    public Robot() {
-    	MultiSpeedController leftDrive = new MultiSpeedController(new Victor(1), new Victor(2), new Victor(3));
-    	MultiSpeedController rightDrive = new MultiSpeedController(new Victor(4), new Victor(5), new Victor(0));
-   	 	//enc = new Encoder(0, 1, false, Encoder.EncodingType.k4X);
-   	 	D = new DigitalInput(0);
-   	 	//enc.setMaxPeriod(.1);
-   	 	//enc.setMinRate(10);
-   	 	//enc.setDistancePerPulse(5);
- 		//enc.setReverseDirection(true);
- 		//enc.setSamplesToAverage(7);
-    	intakeMotor = new Talon(6);
-        myRobot = new RobotDrive(leftDrive, rightDrive);
-        myRobot.setExpiration(0.1);
-        joystick = new Joystick(1);
-        shifter2 = new DoubleSolenoid(4, 5);
-        shifter3 = new DoubleSolenoid(6, 7);    
+
+public class Robot extends IterativeRobot {
+    
+    public static  DriveBase base;// = new DriveBase();
+    public static  Pneumatics lift;// = new Pneumatics();
+    public static  Intake intake;// = new Intake();
+    public static  GhettoEncoder leftEncoder;// = new GhettoEncoder();
+    public static  GhettoEncoder rightEncoder;// = new GhettoEncoder();
+    public static UpdateDashboard updateDashboard;
+    public static Dashboard smartDashboard;// = new Dashboard();
+    public static OI oi;
+	public Command autonomousCommand;
+	
+	public void robotInit() {
+		try {
+			oi = new OI();
+			base = new DriveBase();
+			lift = new Pneumatics();
+			intake = new Intake();
+			leftEncoder = new GhettoEncoder(0,1, false);
+			rightEncoder = new GhettoEncoder(2,3, true);
+			smartDashboard = new Dashboard();
+			updateDashboard = new UpdateDashboard();
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+    	oi.liftLeft.whileHeld(new IntakeUp());
+    	oi.liftRight.whileHeld(new IntakeDown());
+    	oi.intakeIn.whileHeld(new IntakeIn());
+    	oi.intakeOut.whileHeld(new IntakeOut());
+	}
+    /**
+     * This function is called periodically during operator control
+     */
+	public void disabledPeriodic() {
+		Scheduler.getInstance().run();
+	}
+
+    public void autonomousInit() {
+        autonomousCommand = new MoveForward(.5,115);
+        if (autonomousCommand != null) autonomousCommand.start();
     }
 
+    /**
+     * This function is called periodically during autonomous
+     */
+    public void autonomousPeriodic() {
+        Scheduler.getInstance().run();
+        
+    }
+
+    public void teleopInit() {
+		// This makes sure that the autonomous stops running when
+        // teleop starts running. If you want the autonomous to 
+        // continue until interrupted by another command, remove
+        // this line or comment it out.
+        if (autonomousCommand != null) {
+        	autonomousCommand.cancel();
+        	autonomousCommand = null;
+        }
+    	leftEncoder.enc.reset();
+    	rightEncoder.enc.reset();
+    	updateDashboard.start();
+    }
+
+    /**
+     * This function is called when the disabled button is hit.
+     * You can use it to reset subsystems before shutting down.
+     */
+    public void disabledInit(){
+
+    }
+
+    /**
+     * This function is called periodically during operator control
+     */
+    public void teleopPeriodic() {
+        Scheduler.getInstance().run();
+    }
     
     /**
-     * Runs the motors with tank steering.
+     * This function is called periodically during test mode
      */
-    public void operatorControl() {
-        myRobot.setSafetyEnabled(true);
-        
-        while (isOperatorControl() && isEnabled()) {
-        	if (joystick.getRawButton(5)) {
-        		shifter2.set(DoubleSolenoid.Value.kReverse);
-        		shifter3.set(DoubleSolenoid.Value.kReverse);
-        	}
-        	if (joystick.getRawButton(6)) {
-        		shifter2.set(DoubleSolenoid.Value.kForward);
-        		shifter3.set(DoubleSolenoid.Value.kForward);
-        	}
-        	
-        	runIntake();
-        	
-        	double x, y;        	
-        	x = Math.pow(joystick.getRawAxis(2), 3);
-        	y = Math.pow(joystick.getRawAxis(1), 3);
-        	
-        	/*
-        	if (joystick.getRawButton(8)) {
-        		myRobot.setLeftRightMotorOutputs(-y/5-x/3,-y/5+x/3);
-        	}
-        	else {*/
-        		myRobot.setLeftRightMotorOutputs(-y-x,-y+x);
-        	//}
-        	System.out.println(System.currentTimeMillis() + "\t" + D.get());
-        	
-        	SendableChooser position = new SendableChooser();
-        	position.addDefault("Position 1", new Auto());
-        	position.addObject("Position 2", new Auto());
-        	position.addObject("Position 3", new Auto());
-        	position.addObject("Position 4", new Auto());
-        	position.addObject("Position 5", new Auto());
-            SmartDashboard.putData("Position", position);
-            
-            SendableChooser obstacle = new SendableChooser();
-            obstacle.addDefault("Cheval", new Auto());
-            obstacle.addObject("Rock Wall", new Auto());
-            obstacle.addObject("Ramparts", new Auto());
-            SmartDashboard.putData("Obstacle", obstacle);
-            
-            Timer.delay(0.005);	// wait for a motor update time
-        }
+    public void testPeriodic() {
+        LiveWindow.run();
     }
-    
-    public void runIntake() {
-    	if (joystick.getRawButton(7)) {
-    		intakeMotor.set(1);
-    	}
-    	else if (joystick.getRawButton(8)) {
-			intakeMotor.set(-1);
-    	}
-    	else {
-    		intakeMotor.set(0);
-    	}
-    }
-    
 
 }
